@@ -1,0 +1,112 @@
+INSTRUCCIONES PARA PONER EN USO LA PLANTILLA DEL PROYECTO
+
+Resumen
+- Objetivo: Este repositorio es una plantilla para que cada alumno coja su propio dataset (.csv), realice un EDA reproducible, aplique limpiezas y transformaciones, añada 2–3 features, genere visualizaciones y entregue un repo/zip con README, notebook ejecutable y código modular en `src/`.
+
+Qué deben modificar (mínimo)
+- Notebook `notebooks/eda.ipynb`:
+  - Cambiar la variable `file_path` en la sección "2. Cargar el archivo CSV" por la ruta a su archivo (ej: `data/raw/mi_dataset.csv`) o copiar su CSV a `data/raw/` y usar `data/raw/mi_dataset.csv`.
+  - Revisar y descomentar/añadir las líneas de ejemplo que usan columnas concretas (histogramas, boxplots, value_counts, scatter, crosstab) y adaptar los nombres de columnas a su CSV.
+- `src/config.py` (si existe): actualizar `RAW_PATH` y `OUT_PATH` si usan nombres de carpeta/archivo distintos.
+- `requirements.txt`: añadir paquetes extra que usen (si instalan librerías adicionales).
+- `data/processed/`: comprobar que existe; `main.py` escribe aquí el `demo_clean_features.csv` por defecto.
+
+Estructura esperada del proyecto (no cambiar salvo que sepan lo que hacen)
+- `main.py` — entrypoint reproducible: load → clean → features → export
+- `notebooks/eda.ipynb` — orquesta el análisis y contiene la narración
+- `src/` — funciones reutilizables: `io.py`, `cleaning.py`, `features.py`, `viz.py`, `utils.py`
+- `data/raw/` — pongan su CSV aquí o cambien la ruta en el notebook/config
+- `data/processed/` — outputs exportables (no se suele commitear)
+
+Pasos recomendados para ponerlo en uso (secuencia)
+1) Descomprimir y entrar en la carpeta del proyecto:
+```bash
+cd project_demo
+``` 
+2) Inicializar Git:
+```bash
+git init
+``` 
+3) Crear y activar entorno virtual
+- Windows (terminal estándar / PowerShell):
+```bash
+python -m venv .venv
+.venv\Scripts\activate
+```
+- macOS / Linux:
+```bash
+python3 -m venv .venv
+source .venv/bin/activate
+```
+4) Instalar dependencias (con el entorno activado):
+```bash
+pip install -r requirements.txt
+```
+Si van a usar paquetes nuevos, instálenlos y actualicen `requirements.txt` con `pip freeze > requirements.txt`.
+
+5) (Opcional) Hacer que Jupyter use el `.venv` como kernel:
+```bash
+pip install ipykernel
+python -m ipykernel install --user --name=project_demo_venv --display-name "Python (.venv)"
+``` 
+6) Ejecutar pipeline reproducible (opcional):
+```bash
+python main.py
+```
+7) Abrir el notebook y ejecutar `notebooks/eda.ipynb`:
+```bash
+jupyter notebook notebooks/eda.ipynb
+# or
+jupyter lab
+```
+
+Archivos y cambios clave que deben revisar antes de entregar
+- `notebooks/eda.ipynb` — que corra de principio a fin con su CSV (usa rutas relativas)
+- `src/` — al menos 3 funciones reales (ej: `load_csv`, `clean`, `build_features`, `plot_*`)
+- `README.md` — completar con objetivo, dataset (link), preguntas, pipeline, hallazgos
+- `requirements.txt` — que contenga todas las dependencias necesarias
+- `data/raw/mi_dataset.csv` — incluir su CSV en `data/raw/` o documentar la ruta en el README
+- `data/processed/` — outputs opcionales; no suele subirse al repo final (añadir a `.gitignore`)
+
+`.gitignore` recomendado (añadir si no existe)
+```
+.venv/
+__pycache__/
+.ipynb_checkpoints/
+data/processed/
+.vscode/
+*.pyc
+``` 
+
+Checklist de entrega mínima (si entregan esto, aprueban)
+- `README.md` con objetivo, dataset, preguntas, pasos y conclusiones.
+- `notebooks/eda.ipynb` ejecutable (corre de principio a fin usando rutas relativas).
+- `src/` con al menos 3 funciones reales (carga, limpieza, features o viz).
+- 4–6 gráficos con intención y buena presentación (título, ejes, interpretación).
+- 3 conclusiones basadas en evidencia (cada una con referencia al gráfico o tabla que la sustenta).
+
+Cosas que suman nota
+- Notebook que orquesta el pipeline y `main.py` que permite ejecutarlo fuera del notebook.
+- Validaciones simples en `src/utils.py` (ej: `assert_columns`).
+- Transformaciones no triviales (parseo robusto de fechas, normalización de categorías, tratamiento de outliers, pivots/agrupaciones).
+- Tests básicos o scripts de comprobación rápida.
+
+Guion orientativo para la presentación (4 minutos)
+- 30s — Objetivo + dataset (link y por qué lo elegiste) 
+- 90s — Limpieza / transformaciones clave (qué problemas detectaste y cómo los resolviste; muestra 1–2 snippets de Pandas)
+- 90s — Visualizaciones (2–3 gráficos) y lectura: apunta a 2–3 insights claros, cada uno relacionado con un gráfico
+- 30s — Conclusiones + siguientes pasos (qué harías con más tiempo)
+
+Ejemplo de texto corto para la diapositiva final (con 3 bullets):
+- Insight 1: [frase corta] — ver Gráfico 1
+- Insight 2: [frase corta] — ver Gráfico 2
+- Recomendación / siguiente paso: [p.ej. recopilar más datos, probar modelo simple, refinar categorías]
+
+Consejos prácticos
+- Usad rutas relativas (`data/raw/mi_dataset.csv`) para que el notebook funcione tras descomprimir el ZIP.
+- Comprobad que `notebooks/eda.ipynb` no contiene rutas absolutas del desarrollador.
+- Activad el `.venv` antes de instalar o ejecutar para evitar problemas de dependencias.
+- Documentad cualquier cambio de columnas (rename, drop) en el notebook con una celda de Markdown: esto facilita la lectura y corrección.
+- Si el CSV es muy grande, trabajad con una muestra durante desarrollo y dejad instrucciones en el README para re-ejecutar con el dataset completo.
+
+¿Quieres que añada automáticamente un `.gitignore` y un `CONTRIBUTING.md` en el repo, o que actualice `README.md` con este resumen?

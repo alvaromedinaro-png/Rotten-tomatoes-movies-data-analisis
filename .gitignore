@@ -1,0 +1,7 @@
+.venv/
+__pycache__/
+*.pyc
+
+# Optional generated outputs
+data/processed/*.csv
+data/processed/*.png
