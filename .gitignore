@@ -5,3 +5,7 @@ __pycache__/
 # Optional generated outputs
 data/processed/*.csv
 data/processed/*.png
+
+# Non-essential files
+*.zip
+instrucciones.txt
