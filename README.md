@@ -57,13 +57,13 @@ data/raw/Rotten Tomatoes Movies.csv
 ```
 
 ### 6) Hallazgos principales
-- **El Tomatometer está sesgado hacia puntuaciones altas**: no hay una bimodalidad clara; esta conclusión se apoya en el cálculo mostrado en el notebook (media ≈ 60.45, mediana = 66, 34.7 % de películas con 80+ y 26.2 % por debajo de 40).
-- **Los críticos puntúan ligeramente más alto que el público**: en el 54 % de las películas `tomatometer_rating > audience_rating` (mediana del gap = −2 pp). La media (~0) es engañosa por los valores extremos de la cola positiva.
-- **El gap público−crítica varía por género**: al comparar la mediana de `audience_vs_critics` por género (mínimo 50 películas), se observan géneros donde el público suele ser relativamente más generoso y otros donde la crítica tiende a puntuar mejor.
-- **Documentary y Classics aparecen entre los géneros mejor valorados por el público** cuando se controla tamaño muestral.
-- **La popularidad por visualización debe leerse en proporción** (audiencia media por película) y no solo por volumen total de títulos, para evitar sesgos de escala entre géneros.
-- **Las películas *Certified Fresh* sí reciben mejor puntuación del público**, pero con mayor varianza que las *Fresh*.
-- **La tendencia temporal del visionado típico es más estable cuando se usa mediana**: al analizar `audience_count` por año, la mediana evita que unos pocos blockbusters distorsionen la lectura, a diferencia de la media anual.
+- **Tomatometer sesgado a notas altas**: no aparece bimodalidad clara; media **60.45**, mediana **66**, con **34.66 %** de películas en 80+ y **26.17 %** por debajo de 40.
+- **Crítica ligeramente más generosa que el público**: en **54.10 %** de películas se cumple `tomatometer_rating > audience_rating`; la mediana de `audience_vs_critics` es **−2**.
+- **Desacuerdo público-crítica heterogéneo por género**: la mediana del gap cambia de forma relevante entre géneros (ejemplos: **Comedy +3** vs **Classics −9**), además de existir una cola de casos extremos individuales.
+- **Certified Fresh destaca también en público**: `audience_rating` medio **76.99** frente a **68.07** (*Fresh*) y **47.02** (*Rotten*).
+- **Popularidad por género: usar métrica proporcional**: por `audience_count` medio por película (n >= 50) lideran **Animation (421,474)**, **Action & Adventure (272,592)** y **Comedy (257,556)**.
+- **Picos 2003-2005 explicados por outliers**: la media anual de `audience_count` se dispara por blockbusters; el top 5 concentra **56.2 %** (2003), **49.7 %** (2004) y **38.9 %** (2005) del total anual.
+- **Tendencia temporal robusta con mediana**: la mediana anual describe mejor la película “típica”; en años recientes cae con fuerza (ej.: **25,377** en 2006 vs **124** en 2019), evitando la distorsión de la media por títulos extremos.
 
 ### 7) Estructura del proyecto
 ```
