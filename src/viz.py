@@ -101,34 +101,50 @@ def plot_graph(df: pd.DataFrame, out_dir: Path | None = None) -> None:
     axes[1, 0].set_ylim(0, 100)
     axes[1, 0].legend(markerscale=2, fontsize=8, title="Status")
 
-    # 5. MPAA vs audience-vs-critics gap (median, with minimum sample threshold)
-    mpaa_gap = (
-        df.groupby('rating', as_index=False)
+    # 5. Annual median trend of audience_count (robust to outliers)
+    median_trend = (
+        df.groupby('theater_year', as_index=False)
         .agg(
             n_movies=('movie_title', 'count'),
-            median_gap=('audience_vs_critics', 'median'),
+            median_audience_count=('audience_count', 'median'),
         )
     )
-    mpaa_gap = mpaa_gap[mpaa_gap['n_movies'] >= 50].copy()
-    mpaa_gap = mpaa_gap.sort_values('median_gap', ascending=False)
-
-    sns.barplot(
-        data=mpaa_gap,
-        x='median_gap',
-        y='rating',
-        hue='rating',
-        palette='Blues',
-        legend=False,
-        ax=axes[1, 1],
+    median_trend = median_trend[median_trend['n_movies'] >= 5].copy()
+    median_trend = median_trend.sort_values('theater_year')
+    median_trend['median_roll5'] = (
+        median_trend['median_audience_count']
+        .rolling(window=5, min_periods=1)
+        .median()
     )
-    axes[1, 1].axvline(0, color='black', linestyle='--', linewidth=1)
-    axes[1, 1].set_title("MPAA vs gap público − crítica")
-    axes[1, 1].set_xlabel("Mediana (Audience − Tomatometer)")
-    axes[1, 1].set_ylabel("MPAA Rating")
 
-    for idx, row in mpaa_gap.reset_index(drop=True).iterrows():
-        x_pos = row['median_gap'] + (0.2 if row['median_gap'] >= 0 else -0.6)
-        axes[1, 1].text(x_pos, idx, f"n={int(row['n_movies'])}", va='center', fontsize=8)
+    axes[1, 1].plot(
+        median_trend['theater_year'],
+        median_trend['median_audience_count'],
+        marker='o',
+        linewidth=1.7,
+        color='tab:green',
+        label='Mediana anual',
+    )
+    axes[1, 1].plot(
+        median_trend['theater_year'],
+        median_trend['median_roll5'],
+        linestyle='--',
+        linewidth=2,
+        color='tab:orange',
+        label='Tendencia (5 años)',
+    )
+    axes[1, 1].set_title('Tendencia anual de la mediana de visionado')
+    axes[1, 1].set_xlabel('Año de estreno')
+    axes[1, 1].set_ylabel('Mediana de audience_count')
+    axes[1, 1].grid(True, axis='y', alpha=0.25)
+    axes[1, 1].yaxis.set_major_locator(MaxNLocator(nbins=6))
+    axes[1, 1].yaxis.set_major_formatter(FuncFormatter(format_compact))
+
+    start_dec = int((median_trend['theater_year'].min() // 10) * 10)
+    end_dec = int(((median_trend['theater_year'].max() + 9) // 10) * 10)
+    axes[1, 1].set_xticks(range(start_dec, end_dec + 1, 10))
+    axes[1, 1].set_xlim(start_dec, end_dec)
+    axes[1, 1].legend(fontsize=8)
 
     # 6. Top genres by audience rating (proportional, with minimum sample threshold)
     genre_pref = (
