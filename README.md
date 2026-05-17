@@ -19,17 +19,19 @@ Analizar 16 638 películas del catálogo de Rotten Tomatoes para entender la rel
 
 ### 3) Preguntas de investigación
 - Q1: ¿Cómo se distribuye el Tomatometer Rating? ¿Existe sesgo hacia valoraciones extremas?
-- Q2: ¿Las películas *Certified Fresh* también reciben mejores puntuaciones del público?
-- Q3: ¿Qué géneros predominan en el catálogo?
-- Q4: ¿En qué películas el público y la crítica discrepan más?
+- Q2: ¿Las películas *Certified Fresh* reciben mejor valoración del público que *Fresh* y *Rotten*, y con qué magnitud?
+- Q3: ¿Qué géneros están mejor valorados por el público y cuáles concentran mayor visualización por película (métrica proporcional)?
+- Q4: ¿Dónde se concentra el desacuerdo público-crítica: en patrones por género/MPAA o solo en casos extremos individuales?
 - Q5: ¿Cómo se relacionan el Tomatometer y la puntuación del público globalmente?
 
 ### 3.1) Respuestas a Q1–Q5
-- **Q1 (distribución Tomatometer):** Hay sesgo hacia puntuaciones altas; no se observa una bimodalidad clara. La masa principal se concentra en valores medios-altos/altos, con una cola hacia puntuaciones bajas.
-- **Q2 (Certified Fresh y público):** En promedio, *Certified Fresh* presenta mejores puntuaciones de público que *Fresh* y *Rotten*, aunque con mayor dispersión.
-- **Q3 (géneros predominantes):** Predominan **Drama** y **Comedia**, seguidos por **Action** y **Thriller** (ver top de géneros).
-- **Q4 (mayor discrepancia público vs crítica):** La discrepancia se mide con `audience_vs_critics = audience_rating - tomatometer_rating`. En el notebook se incluye una tabla con el top de películas donde más gana el público y donde más gana la crítica.
-- **Q5 (relación global crítica-público):** Existe correlación positiva moderada: cuando sube el Tomatometer, suele subir Audience, pero con dispersión relevante en los extremos.
+- **Q1 (distribución Tomatometer):** La distribución presenta sesgo hacia puntuaciones altas y no muestra bimodalidad clara. En el dataset limpio, la media es **60.45** y la mediana **66**; el **34.66 %** de películas está en 80+ y el **26.17 %** por debajo de 40.
+- **Q2 (Certified Fresh y público):** Sí. La media de `audience_rating` por status es **76.99** (*Certified Fresh*), **68.07** (*Fresh*) y **47.02** (*Rotten*), lo que confirma una diferencia sustancial a favor de *Certified Fresh*.
+- **Q3 (géneros mejor valorados y más visualizados en proporción):**
+    - Por valoración del público (media de `audience_rating`, n >= 50), destacan **Documentary (73.84)** y **Classics (72.06)**.
+    - Por visualización proporcional (`audience_count` medio por película, n >= 50), lideran **Animation (421,474)**, **Action & Adventure (272,592)** y **Comedy (257,556)**.
+- **Q4 (desacuerdo público vs crítica):** La discrepancia se define como `audience_vs_critics = audience_rating - tomatometer_rating`. A nivel global, el patrón favorece ligeramente a la crítica (mediana **-2** y **54.10 %** de películas con `tomatometer_rating > audience_rating`). Además, el desacuerdo se concentra en segmentos específicos: por género (p. ej., **Comedy +3** vs **Classics -9**) y por MPAA (p. ej., **PG-13 +8** vs **NR -10**).
+- **Q5 (relación global crítica-público):** Se observa una correlación positiva moderada-alta (**corr = 0.6615**): cuando aumenta el Tomatometer, tiende a aumentar la puntuación del público, aunque persiste dispersión relevante y desacuerdos puntuales.
 
 ### 4) Data issues & fixes
 | Problema | Solución (`src/cleaning.py`) |
@@ -55,9 +57,11 @@ data/raw/Rotten Tomatoes Movies.csv
 ### 6) Hallazgos principales
 - **El Tomatometer está sesgado hacia puntuaciones altas**: no hay una bimodalidad clara; esta conclusión se apoya en el cálculo mostrado en el notebook (media ≈ 60.45, mediana = 66, 34.7 % de películas con 80+ y 26.2 % por debajo de 40).
 - **Los críticos puntúan ligeramente más alto que el público**: en el 54 % de las películas `tomatometer_rating > audience_rating` (mediana del gap = −2 pp). La media (~0) es engañosa por los valores extremos de la cola positiva.
-- **Drama y Comedia dominan el catálogo**, seguidos de Acción y Thriller.
+- **El gap público−crítica varía por género**: al comparar la mediana de `audience_vs_critics` por género (mínimo 50 películas), se observan géneros donde el público suele ser relativamente más generoso y otros donde la crítica tiende a puntuar mejor.
+- **Documentary y Classics aparecen entre los géneros mejor valorados por el público** cuando se controla tamaño muestral.
+- **La popularidad por visualización debe leerse en proporción** (audiencia media por película) y no solo por volumen total de títulos, para evitar sesgos de escala entre géneros.
 - **Las películas *Certified Fresh* sí reciben mejor puntuación del público**, pero con mayor varianza que las *Fresh*.
-- **R y NR son los ratings MPAA más frecuentes** (>60 % del catálogo combinados).
+- **El gap público−crítica también cambia según MPAA**: al comparar la mediana de `audience_vs_critics` por rating (con umbral mínimo de películas), se observan diferencias de alineación entre crítica y público por tipo de clasificación.
 
 ### 7) Estructura del proyecto
 ```

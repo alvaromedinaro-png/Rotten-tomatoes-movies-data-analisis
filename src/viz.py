@@ -1,10 +1,18 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
+from matplotlib.ticker import FuncFormatter, MaxNLocator
 from pathlib import Path
 
 
 def plot_graph(df: pd.DataFrame, out_dir: Path | None = None) -> None:
+    def format_compact(x: float, _pos: float) -> str:
+        if abs(x) >= 1_000_000:
+            return f"{x / 1_000_000:.1f}M"
+        if abs(x) >= 1_000:
+            return f"{x / 1_000:.0f}K"
+        return f"{x:.0f}"
+
     sns.set_theme(style="whitegrid")
     fig, axes = plt.subplots(2, 3, figsize=(18, 11))
     fig.suptitle("Rotten Tomatoes Movies – Exploratory Data Analysis", fontsize=16, fontweight="bold")
@@ -15,35 +23,62 @@ def plot_graph(df: pd.DataFrame, out_dir: Path | None = None) -> None:
     axes[0, 0].set_xlabel("Tomatometer Rating (%)")
     axes[0, 0].set_ylabel("Count")
 
-    # 2. Audience Rating by Tomatometer Status (boxplot)
-    status_order = ['Rotten', 'Fresh', 'Certified Fresh']
-    sns.boxplot(
-        data=df,
-        x='tomatometer_status',
-        y='audience_rating',
-        hue='tomatometer_status',
-        order=status_order,
+    # 2. Audience-vs-critics gap by genre (business-oriented comparison)
+    gap_by_genre = (
+        df.groupby('primary_genre', as_index=False)
+        .agg(
+            n_movies=('movie_title', 'count'),
+            median_gap=('audience_vs_critics', 'median'),
+        )
+    )
+    gap_by_genre = gap_by_genre[gap_by_genre['n_movies'] >= 50].copy()
+    gap_by_genre = gap_by_genre.sort_values('median_gap', ascending=False).head(10)
+
+    sns.barplot(
+        data=gap_by_genre,
+        x='median_gap',
+        y='primary_genre',
+        hue='primary_genre',
         palette='Set2',
         legend=False,
         ax=axes[0, 1],
     )
-    axes[0, 1].set_title("Audience Rating by Tomatometer Status")
-    axes[0, 1].set_xlabel("Tomatometer Status")
-    axes[0, 1].set_ylabel("Audience Rating (%)")
+    axes[0, 1].axvline(0, color='black', linestyle='--', linewidth=1)
+    axes[0, 1].set_title("Top géneros por gap público − crítica")
+    axes[0, 1].set_xlabel("Mediana (Audience − Tomatometer)")
+    axes[0, 1].set_ylabel("")
 
-    # 3. Top 10 Primary Genres (bar chart)
-    top_genres = df['primary_genre'].value_counts().nlargest(10)
-    sns.barplot(x=top_genres.values, y=top_genres.index, hue=top_genres.index,
-               ax=axes[0, 2], palette='viridis', legend=False)
-    axes[0, 2].set_title("Top 10 Primary Genres")
-    axes[0, 2].set_xlabel("Number of Movies")
+    # 3. Top genres by audience per movie (proportional, robust against volume bias)
+    genre_views = (
+        df.groupby('primary_genre', as_index=False)
+        .agg(
+            n_movies=('movie_title', 'count'),
+            mean_audience_count=('audience_count', 'mean'),
+        )
+    )
+    genre_views = genre_views[genre_views['n_movies'] >= 50].copy()
+    top_genres_prop = genre_views.sort_values('mean_audience_count', ascending=False).head(10)
+
+    sns.barplot(
+        data=top_genres_prop,
+        x='mean_audience_count',
+        y='primary_genre',
+        hue='primary_genre',
+        ax=axes[0, 2],
+        palette='viridis',
+        legend=False,
+    )
+    axes[0, 2].set_title("Top 10 géneros por visualizaciones por película")
+    axes[0, 2].set_xlabel("Audience count medio por película")
     axes[0, 2].set_ylabel("")
-    total_genres = top_genres.sum()
-    for idx, value in enumerate(top_genres.values):
-        pct = 100 * value / total_genres
-        axes[0, 2].text(value + 30, idx, f"{pct:.1f}%", va='center', fontsize=8)
+    axes[0, 2].xaxis.set_major_locator(MaxNLocator(nbins=6))
+    axes[0, 2].xaxis.set_major_formatter(FuncFormatter(format_compact))
+    for idx, row in top_genres_prop.reset_index(drop=True).iterrows():
+        axes[0, 2].text(row['mean_audience_count'] + 0.01 * top_genres_prop['mean_audience_count'].max(), idx,
+                        f"n={int(row['n_movies'])}", va='center', fontsize=8)
 
     # 4. Tomatometer vs Audience Rating scatter (coloured by status)
+    status_order = ['Rotten', 'Fresh', 'Certified Fresh']
     palette = {'Rotten': '#e74c3c', 'Fresh': '#2ecc71', 'Certified Fresh': '#1a8a4a'}
     sns.scatterplot(
         data=df,
@@ -66,20 +101,63 @@ def plot_graph(df: pd.DataFrame, out_dir: Path | None = None) -> None:
     axes[1, 0].set_ylim(0, 100)
     axes[1, 0].legend(markerscale=2, fontsize=8, title="Status")
 
-    # 5. MPAA Rating distribution (bar chart)
-    rating_counts = df['rating'].value_counts()
-    axes[1, 1].bar(rating_counts.index, rating_counts.values, color='steelblue', edgecolor='white')
-    axes[1, 1].set_title("MPAA Rating Distribution")
-    axes[1, 1].set_xlabel("MPAA Rating")
-    axes[1, 1].set_ylabel("Number of Movies")
+    # 5. MPAA vs audience-vs-critics gap (median, with minimum sample threshold)
+    mpaa_gap = (
+        df.groupby('rating', as_index=False)
+        .agg(
+            n_movies=('movie_title', 'count'),
+            median_gap=('audience_vs_critics', 'median'),
+        )
+    )
+    mpaa_gap = mpaa_gap[mpaa_gap['n_movies'] >= 50].copy()
+    mpaa_gap = mpaa_gap.sort_values('median_gap', ascending=False)
 
-    # 6. Audience-vs-Critics score gap distribution
-    sns.histplot(df['audience_vs_critics'], bins=30, kde=True, ax=axes[1, 2], color='mediumpurple')
-    axes[1, 2].axvline(0, color='black', linestyle='--', linewidth=1)
-    axes[1, 2].axvline(df['audience_vs_critics'].median(), color='tomato', linestyle='-', linewidth=1.5)
-    axes[1, 2].set_title("Audience Score − Critics Score Gap")
-    axes[1, 2].set_xlabel("Audience Rating − Tomatometer (%)")
-    axes[1, 2].set_ylabel("Count")
+    sns.barplot(
+        data=mpaa_gap,
+        x='median_gap',
+        y='rating',
+        hue='rating',
+        palette='Blues',
+        legend=False,
+        ax=axes[1, 1],
+    )
+    axes[1, 1].axvline(0, color='black', linestyle='--', linewidth=1)
+    axes[1, 1].set_title("MPAA vs gap público − crítica")
+    axes[1, 1].set_xlabel("Mediana (Audience − Tomatometer)")
+    axes[1, 1].set_ylabel("MPAA Rating")
+
+    for idx, row in mpaa_gap.reset_index(drop=True).iterrows():
+        x_pos = row['median_gap'] + (0.2 if row['median_gap'] >= 0 else -0.6)
+        axes[1, 1].text(x_pos, idx, f"n={int(row['n_movies'])}", va='center', fontsize=8)
+
+    # 6. Top genres by audience rating (proportional, with minimum sample threshold)
+    genre_pref = (
+        df.groupby('primary_genre', as_index=False)
+        .agg(
+            n_movies=('movie_title', 'count'),
+            mean_audience_rating=('audience_rating', 'mean'),
+            median_audience_rating=('audience_rating', 'median'),
+        )
+    )
+    genre_pref = genre_pref[genre_pref['n_movies'] >= 50].copy()
+    top_preferred = genre_pref.sort_values('mean_audience_rating', ascending=False).head(10)
+
+    sns.barplot(
+        data=top_preferred,
+        x='mean_audience_rating',
+        y='primary_genre',
+        hue='primary_genre',
+        palette='crest',
+        legend=False,
+        ax=axes[1, 2],
+    )
+    axes[1, 2].set_title("Top géneros por preferencia del público")
+    axes[1, 2].set_xlabel("Audience rating medio (%)")
+    axes[1, 2].set_ylabel("")
+    axes[1, 2].set_xlim(0, 100)
+
+    for idx, row in top_preferred.reset_index(drop=True).iterrows():
+        axes[1, 2].text(row['mean_audience_rating'] + 0.25, idx, f"n={int(row['n_movies'])}", va='center', fontsize=8)
 
     plt.tight_layout()
 
