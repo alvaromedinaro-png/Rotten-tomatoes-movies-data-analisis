@@ -4,7 +4,7 @@
 Analizar 16 638 películas del catálogo de Rotten Tomatoes para entender la relación entre la puntuación de la crítica (Tomatometer) y la puntuación del público, identificar géneros y clasificaciones predominantes, y detectar sesgos sistemáticos entre ambas audiencias.
 
 ### 2) Dataset
-- **Fuente:** [Rotten Tomatoes Movies – Kaggle](https://www.kaggle.com/datasets/andrezaza/clapper-massive-rotten-tomatoes-movies-and-reviews)
+- **Fuente:** [Rotten Tomatoes Movies ](https://mavenanalytics.io/data-playground/movie-ratings)
 - **Archivo:** `data/raw/Rotten Tomatoes Movies.csv`
 - **Nº filas / columnas:** 16 638 × 17
 - **Variables clave:** `tomatometer_rating`, `audience_rating`, `tomatometer_status`, `rating` (MPAA), `genre`, `runtime_in_minutes`, `in_theaters_date`
