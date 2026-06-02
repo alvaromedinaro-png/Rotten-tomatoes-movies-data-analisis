@@ -25,7 +25,7 @@ Analizar 16 638 películas del catálogo de Rotten Tomatoes para entender la rel
 - Q5: ¿Cómo se relacionan el Tomatometer y la puntuación del público globalmente?
 - Q6: ¿Cuál es la tendencia temporal del visionado típico por película y por qué conviene usar la mediana en lugar de la media?
 
-### 3.1) Respuestas a Q1–Q6
+### 4) Respuestas a Q1–Q6
 - **Q1 (distribución Tomatometer):** La distribución presenta sesgo hacia puntuaciones altas y no muestra bimodalidad clara. En el dataset limpio, la media es **60.45** y la mediana **66**; el **34.66 %** de películas está en 80+ y el **26.17 %** por debajo de 40.
 - **Q2 (Certified Fresh y público):** Sí. La media de `audience_rating` por status es **76.99** (*Certified Fresh*), **68.07** (*Fresh*) y **47.02** (*Rotten*), lo que confirma una diferencia sustancial a favor de *Certified Fresh*.
 - **Q3 (géneros mejor valorados y más visualizados en proporción):**
@@ -35,7 +35,21 @@ Analizar 16 638 películas del catálogo de Rotten Tomatoes para entender la rel
 - **Q5 (relación global crítica-público):** Se observa una correlación positiva moderada-alta (**corr = 0.6615**): cuando aumenta el Tomatometer, tiende a aumentar la puntuación del público, aunque persiste dispersión relevante y desacuerdos puntuales.
 - **Q6 (tendencia temporal del visionado típico):** La mediana anual de `audience_count` muestra una evolución más estable que la media, con niveles altos en los 90/2000 y una caída marcada en la década de 2010. Es la métrica recomendada para comparar años porque reduce la distorsión causada por blockbusters extremos.
 
-### 4) Data issues & fixes
+### 5) Tablas resumen y controles de calidad
+
+El pipeline incluye tablas resumen y controles de calidad para documentar resultados intermedios de limpieza y análisis:
+
+| Tabla / check | Qué aporta |
+|---|---|
+| `quality_checks(raw_df, cleaned_df)` | Nulos antes/después, duplicados y registros descartados o transformados en limpieza. |
+| `summarize_by_status(df)` | Comparación de `audience_rating` y `tomatometer_rating` por `tomatometer_status`. |
+| `summarize_genre_gap(df)` | Gap mediano `audience_vs_critics` por `primary_genre`, filtrado por tamaño mínimo de muestra. |
+| `summarize_year_views(df)` | Evolución anual de `audience_count` con mediana y media para mostrar el efecto de outliers. |
+| `summarize_rating_scores(df)` | Comparativa por MPAA (`rating`) de crítica y público. |
+
+Estas salidas se imprimen al ejecutar `python main.py` y pueden reutilizarse en el notebook para el EDA narrativo.
+
+### 6) Data issues & fixes
 | Problema | Solución (`src/cleaning.py`) |
 |---|---|
 | Typos en `rating` (`PG-13)`, `R)`) | `str.replace(')', '')` |
@@ -46,7 +60,7 @@ Analizar 16 638 películas del catálogo de Rotten Tomatoes para entender la rel
 | Fechas como string | `pd.to_datetime(..., errors='coerce')` |
 | `tomatometer_status` sin orden | `pd.Categorical(..., ordered=True)` |
 
-### 5) Pipeline
+### 7) Pipeline
 ```
 data/raw/Rotten Tomatoes Movies.csv
     → src/io.py       load_csv()
@@ -56,7 +70,7 @@ data/raw/Rotten Tomatoes Movies.csv
     → data/processed/clean_dataset.csv
 ```
 
-### 6) Hallazgos principales
+### 8) Hallazgos principales
 - **Tomatometer sesgado a notas altas**: no aparece bimodalidad clara; media **60.45**, mediana **66**, con **34.66 %** de películas en 80+ y **26.17 %** por debajo de 40.
 - **Crítica ligeramente más generosa que el público**: en **54.10 %** de películas se cumple `tomatometer_rating > audience_rating`; la mediana de `audience_vs_critics` es **−2**.
 - **Desacuerdo público-crítica heterogéneo por género**: la mediana del gap cambia de forma relevante entre géneros (ejemplos: **Comedy +3** vs **Classics −9**), además de existir una cola de casos extremos individuales.
@@ -65,27 +79,34 @@ data/raw/Rotten Tomatoes Movies.csv
 - **Picos 2003-2005 explicados por outliers**: la media anual de `audience_count` se dispara por blockbusters; el top 5 concentra **56.2 %** (2003), **49.7 %** (2004) y **38.9 %** (2005) del total anual.
 - **Tendencia temporal robusta con mediana**: la mediana anual describe mejor la película “típica”; en años recientes cae con fuerza (ej.: **25,377** en 2006 vs **124** en 2019), evitando la distorsión de la media por títulos extremos.
 
-### 7) Estructura del proyecto
+### 9) Estructura del proyecto
 ```
 project_demo/
 ├── main.py                # Entrypoint reproducible
 ├── data/
-│   ├── raw/               # CSV original (no modificar)
-│   └── processed/         # clean_dataset.csv + eda_visualizations.png
+│   ├── raw/
+│   │   └── Rotten Tomatoes Movies.csv   # CSV original (no modificar)
+│   └── processed/
+│       ├── clean_dataset.csv            # Dataset limpio generado por el pipeline
+│       └── eda_visualizations.png       # Figura resumen de visualizaciones
 ├── notebooks/
 │   └── eda.ipynb          # EDA narrativo y orquestado
 ├── src/
+│   ├── __init__.py
 │   ├── config.py          # Rutas RAW_PATH / OUT_PATH
 │   ├── io.py              # load_csv()
 │   ├── cleaning.py        # clean()
 │   ├── features.py        # build_features()
+│   ├── reporting.py       # quality_checks() + tablas resumen
 │   ├── viz.py             # plot_graph()
 │   └── utils.py           # assert_columns()
+├── tests/
+│   └── test_cleaning_features.py        # tests unitarios de limpieza/features/reporting
 ├── README.md
 └── requirements.txt
 ```
 
-### 8) Cómo ejecutar
+### 10) Cómo ejecutar
 ```bash
 pip install -r requirements.txt
 python main.py                  # pipeline completo → data/processed/

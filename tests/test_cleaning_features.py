@@ -11,6 +11,13 @@ if str(PROJECT_ROOT) not in sys.path:
 
 from src.cleaning import clean
 from src.features import build_features
+from src.reporting import (
+    quality_checks,
+    summarize_by_status,
+    summarize_genre_gap,
+    summarize_rating_scores,
+    summarize_year_views,
+)
 
 
 class TestCleaningAndFeatures(unittest.TestCase):
@@ -89,6 +96,49 @@ class TestCleaningAndFeatures(unittest.TestCase):
         self.assertEqual(out['theater_year'].astype('Int64').iloc[0], 2020)
         self.assertEqual(out['audience_vs_critics'].astype(float).iloc[0], 10.0)
         self.assertEqual(out.loc[0, 'primary_genre'], 'Action & Adventure')
+
+    def test_reporting_tables_are_structured(self):
+        raw = pd.DataFrame(
+            {
+                'movie_title': ['A', 'A', 'B', 'C'],
+                'rating': ['PG-13)', 'PG-13)', 'R)', 'G'],
+                'tomatometer_status': ['Fresh', 'Fresh', 'Rotten', 'Certified Fresh'],
+                'in_theaters_date': ['2020-01-01', '2020-01-01', '2021-05-02', '2022-06-01'],
+                'on_streaming_date': ['2020-06-01', '2020-06-01', '2021-10-01', '2022-10-01'],
+                'critics_consensus': [None, None, 'ok', 'ok'],
+                'genre': ['Drama', 'Drama', 'Comedy', 'Action'],
+                'studio_name': ['S1', 'S1', 'S2', 'S3'],
+                'directors': ['D1', 'D1', 'D2', 'D3'],
+                'writers': ['W1', 'W1', 'W2', 'W3'],
+                'cast': ['C1', 'C1', 'C2', 'C3'],
+                'runtime_in_minutes': [100, 100, 90, 95],
+                'audience_rating': [80, 80, 70, 85],
+                'audience_count': [1000, 1000, 800, 1200],
+                'tomatometer_rating': [75, 75, 65, 90],
+            }
+        )
+
+        cleaned = clean(raw)
+        featured = build_features(cleaned)
+
+        qc = quality_checks(raw, cleaned)
+        self.assertIn('rows', qc['metric'].tolist())
+        self.assertIn('duplicate_rows', qc['metric'].tolist())
+
+        status = summarize_by_status(featured)
+        self.assertEqual(status['tomatometer_status'].tolist(), ['Rotten', 'Fresh', 'Certified Fresh'])
+
+        genre = summarize_genre_gap(featured, min_movies=1)
+        self.assertIn('median_gap', genre.columns)
+        self.assertGreaterEqual(len(genre), 1)
+
+        year = summarize_year_views(featured, min_movies=1)
+        self.assertIn('median_audience_count', year.columns)
+        self.assertGreaterEqual(len(year), 1)
+
+        rating = summarize_rating_scores(featured)
+        self.assertIn('mean_tomatometer_rating', rating.columns)
+        self.assertGreaterEqual(len(rating), 1)
 
 
 if __name__ == '__main__':
